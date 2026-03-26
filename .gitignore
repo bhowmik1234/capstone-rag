@@ -1,0 +1,16 @@
+# Node modules
+node_modules/
+
+# OS files
+.DS_Store
+
+# env
+.env
+
+# Large local dataset / DB files
+data/fhir_vectors/
+node_modules/@lancedb/lancedb-darwin-arm64/lancedb.darwin-arm64.node
+
+# Product artifacts
+dist/
+build/
