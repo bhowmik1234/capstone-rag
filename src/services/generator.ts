@@ -10,31 +10,24 @@ export class AnswerGeneratorService {
     }
 
     async generateAnswer(question: string, context: string, patientContext: string) {
-        const prompt = `You are a healthcare record question-answering assistant.
+        const prompt = `You are a Senior Clinical Informaticist providing a consultation report based on patient FHIR records.
+        
+        STRUCTURE YOUR RESPONSE AS FOLLOWS:
+        1. CLINICAL SUMMARY: A detailed, professional answer to the question.
+        2. RECORD EVIDENCE: List specific clinical resources (e.g., Condition onset, Observation value) found in the retrieval context.
+        3. CLINICAL STATUS: Clearly state if the condition/medication is ACTIVE, RESOLVED, or UNKNOWN based on meta-data.
+        4. CONFIDENCE LEVEL: State your confidence (Low/Med/High) based on the clarity of the retrieved evidence.
 
-Answer ONLY from the provided retrieved clinical evidence.
-Do not use outside knowledge.
-Do not hallucinate.
-If the record does not contain enough evidence, say that clearly.
-Prefer the latest clinically relevant records when the question asks about current, latest, or recent information.
-Be precise, concise, and factual.
-Mention dates when important.
-Differentiate between active, historical, and unknown status when possible.
-Do not infer a disease, allergy, or side effect unless it is directly supported by the evidence.
+        RULES:
+        - Answer ONLY from the provided evidence.
+        - Mention exact dates and values.
+        - If data is missing or conflicting, state it clearly in the summary.
+        - Be objective and use medical terminology.
 
-Return:
-1. A direct answer
-2. A short evidence summary
-3. Any missing-data warning if needed
-
-QUESTION:
-${question}
-
-PATIENT:
-${patientContext}
-
-RETRIEVED EVIDENCE:
-${context}`;
+        QUESTION: ${question}
+        PATIENT PROFILE: ${patientContext}
+        RETRIEVED FHIR EVIDENCE:
+        ${context}`;
 
         const answer = await this.ollama.generateChatResponse(prompt);
 
@@ -51,16 +44,22 @@ ${context}`;
     }
 
     async extractSearchTerms(question: string, initialAnswer: string): Promise<string> {
-        const prompt = `Based on the following patient clinical question and the initial answer derived from their records, extract 2-3 key medical terms (conditions, medications, or procedures) to search in PubMed for general medical verification.
+        const prompt = `Medical Search Assistant: Extract ONLY 3 simple medical keywords from this question/answer. 
+        NO DATES. NO NAMES. NO PII. NO SENTENCES.
         
         QUESTION: ${question}
         INITIAL ANSWER: ${initialAnswer}
         
-        Return ONLY the search terms separated by spaces. Do not include patient names or IDs.
-        Example: "asthma salbutamol treatment"`;
+        OUTPUT ONLY THE KEYWORDS SEPARATED BY SPACES.
+        Example Output: asthma inhaler treatment`;
 
-        const terms = await this.ollama.generateChatResponse(prompt, "You are a medical search assistant. Output only keywords.");
-        return terms.trim().replace(/^"|"$/g, '');
+        const terms = await this.ollama.generateChatResponse(prompt, "You are a medical search assistant. Output only 3 keywords.");
+        // Clean up any stray quotes, newlines or conversational filler
+        return terms.trim()
+            .replace(/^"|"$/g, '')
+            .replace(/keywords:?/i, '')
+            .split('\n')[0]
+            .trim();
     }
 
     async verifyAndRefine(question: string, initialAnswer: string, pubMedArticles: PubMedArticle[]) {
@@ -73,24 +72,25 @@ ${context}`;
 
         const pubMedContext = pubMedArticles.map(a => `ID: ${a.id}\nTitle: ${a.title}\nSummary: ${a.abstract}`).join('\n\n');
 
-        const prompt = `You are a medical verification assistant. 
-        You are given an initial answer based on a patient's PRIVATE clinical records, and a set of PUBLIC medical articles from PubMed.
+        const prompt = `You are a Clinical Research Assistant. 
+        Your goal is to synthesize PATIENT-SPECIFIC records with GENERAL MEDICAL KNOWLEDGE from PubMed.
 
-        INITIAL ANSWER:
+        PATIENT RECORD SUMMARY (INITIAL):
         ${initialAnswer}
 
-        PUBMED ARTICLES:
+        PUBMED CLINICAL LITERATURE:
         ${pubMedContext}
 
         TASK:
-        1. Verify if the medical facts in the initial answer (e.g., medication usage, treatment standards) align with the general medical knowledge in the PubMed articles.
-        2. Provide a "nice, brief, and appropriate" final response that combines the patient-specific facts with a brief verification or context from PubMed.
-        3. If there's a conflict or if the PubMed articles suggest something important that's relevant to the patient's context, mention it gently as a general medical note.
-        4. Focus on being professional and helpful.
+        Refine the initial answer into a comprehensive "Clinical Consultation Report".
 
-        Structure your response as:
-        - FINAL RESPONSE: [The refined answer]
-        - PUBMED VERIFICATION: [A brief sentence about the verification against literature]`;
+        REQUIRED STRUCTURE:
+        - PATIENT-SPECIFIC SYNTHESIS: Elaborate the patient's specific health data.
+        - LITERATURE-BASED CONTEXT: Summarize how the PubMed articles relate to the patient's conditions/medications.
+        - RECOMMENDATION LOGIC: Briefly note standard medical practice for this context based on literature.
+        - PUBMED VERIFICATION: A final confirmation of fact-consistency.
+
+        Maintain professional medical tone. Use technical terms correctly.`;
 
         const refinement = await this.ollama.generateChatResponse(prompt);
         

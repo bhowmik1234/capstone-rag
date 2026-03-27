@@ -21,7 +21,7 @@ const generator = new AnswerGeneratorService(ollama);
 
 app.post('/query', async (req, res) => {
     try {
-        const { question, patientId, patientName } = req.body as QueryRequest;
+        const { question, patientId, patientName, skipPubMed = false } = req.body as QueryRequest & { skipPubMed?: boolean };
 
         if (!question) {
             return res.status(400).json({ error: 'Question is required' });
@@ -50,15 +50,24 @@ app.post('/query', async (req, res) => {
         const patientContext = `Patient ID: ${foundId || patientId || "unknown"}, Name: ${foundName || patientName || "unknown"}`;
         const { answer: initialAnswer, warnings } = await generator.generateAnswer(question, context, patientContext);
 
-        // PubMed verification step
-        console.log("Extracting search terms for PubMed...");
-        const searchTerms = await generator.extractSearchTerms(question, initialAnswer);
-        
-        console.log(`Searching PubMed for: ${searchTerms}`);
-        const pubMedArticles = await pubmed.searchAndFetchArticles(searchTerms, 3);
-        
-        console.log("Verifying and refining answer with PubMed...");
-        const { finalAnswer, verification, articles } = await generator.verifyAndRefine(question, initialAnswer, pubMedArticles);
+        let finalAnswer = initialAnswer;
+        let verification = "PubMed verification skipped.";
+        let articles: any[] = [];
+
+        if (!skipPubMed) {
+            // PubMed verification step
+            console.log("Extracting search terms for PubMed...");
+            const searchTerms = await generator.extractSearchTerms(question, initialAnswer);
+            
+            console.log(`Searching PubMed for: ${searchTerms}`);
+            const pubMedArticles = await pubmed.searchAndFetchArticles(searchTerms, 3);
+            
+            console.log("Verifying and refining answer with PubMed...");
+            const result = await generator.verifyAndRefine(question, initialAnswer, pubMedArticles);
+            finalAnswer = result.finalAnswer;
+            verification = result.verification;
+            articles = result.articles || [];
+        }
 
         res.json({
             answer: finalAnswer,
