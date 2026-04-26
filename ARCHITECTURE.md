@@ -2,7 +2,7 @@
 
 This document provides a technical deep dive into the architecture, dataflow, and core workflows of the Healthcare RAG system.
 
-## 🏗️ High-Level Architecture
+## High-Level Architecture
 
 The system is built as a modular micro-service oriented RAG pipeline, prioritizing clinical grounding and verifiable answers.
 
@@ -28,7 +28,7 @@ graph TD
 
 ---
 
-## 📥 Data Ingestion Workflow
+## Data Ingestion Workflow
 
 The ingestion process transforms loose FHIR resources into a queryable semantic index.
 
@@ -53,7 +53,7 @@ graph LR
 
 ---
 
-## 🔄 RAG Query Dataflow (The "Verification Chain")
+## RAG Query Dataflow (The "Verification Chain")
 
 The system implements a multi-stage "Verification Chain" to ensure clinical accuracy and minimize hallucinations.
 
@@ -101,7 +101,7 @@ sequence_diagram
 
 ---
 
-## 🛠️ Technical Stack
+## Technical Stack
 
 | Component | Technology | Role |
 | :--- | :--- | :--- |
@@ -113,7 +113,7 @@ sequence_diagram
 
 ---
 
-## 🔒 Security & Privacy
+## Security & Privacy
 - **Local-First**: All PHI (Patient Health Information) is processed locally via Ollama.
 - **Resource Isolation**: Queries are strictly scoped to the provided `patientId` to prevent cross-patient data leakage.
 - **PubMed Anonymization**: Only general medical terms (not patient-specific data) are sent to PubMed for verification.

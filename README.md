@@ -2,7 +2,7 @@
 
 A modular, clinical Retrieval-Augmented Generation (RAG) system featuring local LLM inference, PubMed verification, and automated evaluation metrics.
 
-## 🚀 Quick Start Guide
+## Quick Start Guide
 
 ### 1. Prerequisites
 - **Node.js** (v18+) & **npm**

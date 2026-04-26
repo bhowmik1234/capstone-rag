@@ -3,7 +3,7 @@ import requests
 import json
 import os
 import sys
-from deepeval.metrics import FaithfulnessMetric, HallucinationMetric
+from deepeval.metrics import FaithfulnessMetric, HallucinationMetric, ContextualRelevancyMetric
 from deepeval.test_case import LLMTestCase
 from deepeval.models.llms.ollama_model import OllamaModel
 from golden_dataset import GOLDEN_DATASET
@@ -56,14 +56,18 @@ def analyze_query(query_index=0):
     )
     faith_std = FaithfulnessMetric(threshold=0.5, model=custom_model)
     hallu_std = HallucinationMetric(threshold=0.5, model=custom_model)
+    rel_std = ContextualRelevancyMetric(threshold=0.5, model=custom_model)
     
     faith_std.measure(test_case_std)
     hallu_std.measure(test_case_std)
+    rel_std.measure(test_case_std)
     
     score_f_std = faith_std.score
     score_h_std = hallu_std.score
+    score_r_std = rel_std.score
     print(f"  > Baseline Faithfulness: {score_f_std:.2f}")
     print(f"  > Baseline Hallucination Score: {score_h_std:.2f} (Higher=Better)")
+    print(f"  > Baseline Contextual Relevancy: {score_r_std:.2f}")
 
     print(f"\n{'-'*60}\n")
 
@@ -100,20 +104,25 @@ def analyze_query(query_index=0):
     )
     faith_ver = FaithfulnessMetric(threshold=0.5, model=custom_model)
     hallu_ver = HallucinationMetric(threshold=0.5, model=custom_model)
+    rel_ver = ContextualRelevancyMetric(threshold=0.5, model=custom_model)
     
     faith_ver.measure(test_case_ver)
     hallu_ver.measure(test_case_ver)
+    rel_ver.measure(test_case_ver)
     
     score_f_ver = faith_ver.score
     score_h_ver = hallu_ver.score
+    score_r_ver = rel_ver.score
     print(f"  > Refined Faithfulness: {score_f_ver:.2f}")
     print(f"  > Refined Hallucination Score: {score_h_ver:.2f}")
+    print(f"  > Refined Contextual Relevancy: {score_r_ver:.2f}")
 
     print(f"\n{'='*60}")
     print(f"CLINICAL IMPROVEMENT SUMMARY")
     print(f"{'='*60}")
-    print(f"Hallucination Delta:  {(score_h_ver - score_h_std):+.2f}")
-    print(f"Faithfulness Delta:   {(score_f_ver - score_f_std):+.2f}")
+    print(f"Hallucination Delta:   {(score_h_ver - score_h_std):+.2f}")
+    print(f"Faithfulness Delta:    {(score_f_ver - score_f_std):+.2f}")
+    print(f"Relevancy Delta:       {(score_r_ver - score_r_std):+.2f}")
     print(f"{'='*60}\n")
 
 if __name__ == "__main__":

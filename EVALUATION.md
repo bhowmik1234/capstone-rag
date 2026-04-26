@@ -26,11 +26,11 @@ We use **DeepEval** with a local **llama3.2:3b** model to measure the following 
 
 ## Analysis & Insights
 
-### 🏆 Top Performer: Query 3 (Active Conditions)
+### Top Performer: Query 3 (Active Conditions)
 - **Scores**: 1.00 Faithfulness / 1.00 Relevancy.
 - **Why**: The system correctly identified active vs. resolved conditions for the patient, showing strong reasoning on temporal data.
 
-### 📉 Challenges
+### Challenges
 - **Query 2 & 4 (Low Relevancy)**: DeepEval's local evaluator (llama3.2) was particularly strict on these queries. While the system provided answers, the evaluator deemed them irrelevant or poorly structured compared to the expected "Golden" output.
 - **Latency**: Average latency is ~12s. This is high due to the **multi-query verification chain** (Retrieval -> Generation -> PubMed Extraction -> PubMed Search -> Refinement).
 

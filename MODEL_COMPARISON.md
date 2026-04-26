@@ -1,13 +1,9 @@
 # Model Comparison: Llama 3.2 3B vs. 1B
 
 This document compares the performance of the Healthcare RAG system using two different local LLMs: **Llama 3.2 3B** and **Llama 3.2 1B**.
-
-## Executive Summary
-While the 1B model is smaller, **Llama 3.2 3B** outperformed it in both **Speed (Latency)** and **Factual Accuracy (Faithfulness)** in this clinical RAG environment. The 1B model showed a tendency for hallucinations and slower inference times, likely due to less efficient reasoning in the multi-stage verification chain.
-
 ---
 
-## 📊 Key Metrics Comparison
+## Key Metrics Comparison
 
 | Metric | Llama 3.2 3B | Llama 3.2 1B | Winner |
 | :--- | :--- | :--- | :--- |
@@ -21,7 +17,7 @@ While the 1B model is smaller, **Llama 3.2 3B** outperformed it in both **Speed 
 
 ---
 
-## 🔍 Detailed Analysis
+## Detailed Analysis
 
 ### 1. Latency Paradox
 Counter-intuitively, the **1B model was ~50% slower** than the 3B model.
@@ -37,5 +33,5 @@ Both models performed similarly in terms of relevancy, though the 1B model somet
 
 ---
 
-## 🛡️ Recommendation
+## Recommendation
 For this Healthcare RAG implementation, we recommend staying with **Llama 3.2 3B**. It provides a better balance of reasoning speed and clinical accuracy, which is paramount when dealing with patient data and peer-reviewed literature from PubMed.

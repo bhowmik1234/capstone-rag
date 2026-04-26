@@ -4,7 +4,7 @@ DeepEval is an open-source evaluation framework for LLMs. In this project, it ac
 
 ---
 
-## 🔄 DeepEval Workflow
+## DeepEval Workflow
 
 The evaluation process operates by feeding a test query into our live API, capturing the response, and then using a separate, independent LLM evaluator to score that response against our ground truth.
 
@@ -36,7 +36,7 @@ sequence_diagram
 
 ---
 
-## 📊 In-Depth Metric Explanations
+## In-Depth Metric Explanations
 
 In a healthcare setting, traditional NLP metrics (like BLEU or ROUGE) are insufficient because they only measure word overlap. DeepEval uses **LLM-Evaluated Metrics**, which can assess factual consistency, tone, and logical reasoning.
 
@@ -64,7 +64,7 @@ We use the following four core metrics:
 
 ---
 
-## ⚙️ Configuration in our Pipeline
+## Configuration in our Pipeline
 
 We configure DeepEval to use **local LLMs** instead of OpenAI. This ensures our evaluation process remains completely private, allowing us to evaluate PHI (Protected Health Information) without sending data to external servers.
 
