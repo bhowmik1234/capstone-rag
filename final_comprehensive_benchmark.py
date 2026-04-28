@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Select the model you want to run (Edit this for individual runs)
-TARGET_MODEL = "llama3.2:3b" 
+TARGET_MODEL = "gemma2:2b" 
 MODELS = [
     "llama3.2:3b",
     "nemotron-mini:4b",
