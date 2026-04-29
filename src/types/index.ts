@@ -27,6 +27,7 @@ export interface QueryRequest {
     question: string;
     patientId?: string;
     patientName?: string;
+    retrievalStrategy?: 'bm25' | 'embedding' | 'hybrid';
 }
 
 export interface RetrievalSource {

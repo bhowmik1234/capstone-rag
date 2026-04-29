@@ -1,5 +1,6 @@
 import { VectorDbService } from './vectorDb.js';
 import { OllamaService } from './ollama.js';
+import { BM25 } from './bm25.js';
 import { QueryRequest, RetrievalSource } from '../types/index.js';
 
 export class RetrievalService {
@@ -12,7 +13,7 @@ export class RetrievalService {
     }
 
     async retrieve(request: QueryRequest) {
-        const { question, patientId, patientName } = request;
+        const { question, patientId, patientName, retrievalStrategy = 'hybrid' } = request;
 
         //  Detect Intent
         const intent = this.detectIntent(question);
@@ -33,12 +34,52 @@ export class RetrievalService {
         }
 
         const filter = filterParts.length > 0 ? filterParts.join(' AND ') : undefined;
+        let results: any[] = [];
 
-        // Generate query embedding
-        const queryVector = await this.ollama.generateEmbedding(question);
+        if (retrievalStrategy === 'embedding') {
+            const queryVector = await this.ollama.generateEmbedding(question);
+            results = await this.vectorDb.search(queryVector, 15, filter);
+        } else if (retrievalStrategy === 'bm25') {
+            const allRecords = await this.vectorDb.getRecords(filter);
+            if (allRecords.length > 0) {
+                const bm25 = new BM25();
+                bm25.fit(allRecords.map((r: any) => r.textContent));
+                const scores = bm25.score(question);
+                
+                const scoredRecords = allRecords.map((r: any, idx: number) => ({ ...r, _score: scores[idx] }));
+                scoredRecords.sort((a, b) => b._score - a._score);
+                results = scoredRecords.slice(0, 15);
+            }
+        } else { // hybrid
+            const queryVector = await this.ollama.generateEmbedding(question);
+            const candidateRecords = await this.vectorDb.search(queryVector, 100, filter);
+            if (candidateRecords.length > 0) {
+                const bm25 = new BM25();
+                bm25.fit(candidateRecords.map((r: any) => r.textContent));
+                const bm25Scores = bm25.score(question);
 
-        // Search Vector DB
-        const results = await this.vectorDb.search(queryVector, 15, filter);
+                const maxBm25 = Math.max(...bm25Scores, 0.0001);
+                const minBm25 = Math.min(...bm25Scores);
+                const bm25Range = maxBm25 - minBm25 > 0 ? maxBm25 - minBm25 : 1;
+
+                const distances = candidateRecords.map((r: any) => r._distance || 0);
+                const maxDist = Math.max(...distances, 0.0001);
+                const minDist = Math.min(...distances);
+                const distRange = maxDist - minDist > 0 ? maxDist - minDist : 1;
+
+                const alpha = 0.5;
+
+                const hybridRecords = candidateRecords.map((r: any, idx: number) => {
+                    const normBm25 = (bm25Scores[idx] - minBm25) / bm25Range;
+                    const normEmbedding = 1 - ((r._distance || 0) - minDist) / distRange;
+                    const hybridScore = alpha * normBm25 + (1 - alpha) * normEmbedding;
+                    return { ...r, _score: hybridScore };
+                });
+
+                hybridRecords.sort((a, b) => b._score - a._score);
+                results = hybridRecords.slice(0, 15);
+            }
+        }
 
         // Re-rank/Sort by date for "latest" queries
         if (question.toLowerCase().match(/latest|current|recent|now/)) {

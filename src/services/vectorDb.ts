@@ -31,4 +31,13 @@ export class VectorDbService {
         }
         return await query.toArray();
     }
+
+    async getRecords(filter?: string) {
+        const table = await this.getTable();
+        let query = table.query();
+        if (filter) {
+            query = query.where(filter);
+        }
+        return await query.toArray();
+    }
 }

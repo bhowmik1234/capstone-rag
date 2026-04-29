@@ -21,19 +21,20 @@ const generator = new AnswerGeneratorService(ollama);
 
 app.post('/query', async (req, res) => {
     try {
-        const { question, patientId, patientName, skipPubMed = false } = req.body as QueryRequest & { skipPubMed?: boolean };
+        const { question, patientId, patientName, skipPubMed = false, retrievalStrategy } = req.body as QueryRequest & { skipPubMed?: boolean, retrievalStrategy?: 'bm25' | 'embedding' | 'hybrid' };
 
         if (!question) {
             return res.status(400).json({ error: 'Question is required' });
         }
 
-        console.log(`Processing query: "${question}" for patient: ${patientId || patientName || 'ANY'}`);
+        console.log(`Processing query: "${question}" for patient: ${patientId || patientName || 'ANY'} using strategy: ${retrievalStrategy || 'hybrid'}`);
 
         // Retrieval
         const { context, sources, intent, patientId: foundId, patientName: foundName } = await retriever.retrieve({
             question,
             patientId,
-            patientName
+            patientName,
+            retrievalStrategy
         });
 
         if (!context) {
